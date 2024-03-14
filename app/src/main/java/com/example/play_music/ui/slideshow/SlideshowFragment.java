@@ -18,6 +18,7 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.navigation.NavController;
 
+import com.airbnb.lottie.LottieAnimationView;
 import com.example.play_music.AudioModel;
 import com.example.play_music.R;
 import com.example.play_music.databinding.FragmentSlideshowBinding;
@@ -25,37 +26,29 @@ import com.example.play_music.databinding.FragmentSlideshowBinding;
 import java.util.ArrayList;
 import java.util.Objects;
 
-public class SlideshowFragment extends Fragment {
+public class SlideshowFragment extends Fragment implements MediaPlayer.OnSeekCompleteListener, MediaPlayer.OnBufferingUpdateListener {
 
     private FragmentSlideshowBinding binding;
-    public Button btn_play, btn_pause, btn_prev, btn_next;
-    private TextView textCurrentTime, textTotalDuration;
-
     private SeekBar playerBar;
     private Handler handler;
     AudioModel n_audioModel;
     private MediaPlayer mediaPlayer;
 
-    private final String KEY_PATH = "KEY_PATH";
-    private final String KEY_TITLE = "KEY_TITLE";
-    private final String KEY_IMAGE = "KEY_IMAGE";
+    private final String KEY_M= "KEY_M";
 
+    boolean fromUser= true;
 
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+       mediaPlayer =new MediaPlayer();
         handler = new Handler();
-
+        mediaPlayer.setOnSeekCompleteListener(this);
+        mediaPlayer.setOnBufferingUpdateListener(this);
     }
 
-    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
-        super.onViewCreated(view, savedInstanceState);
 
-
-        mediaPlayer = new MediaPlayer();
-        prepareMediaPlayer();
-    }
 
     @SuppressLint("ClickableViewAccessibility")
     public View onCreateView(@NonNull LayoutInflater inflater,
@@ -64,61 +57,75 @@ public class SlideshowFragment extends Fragment {
         binding = FragmentSlideshowBinding.inflate(inflater, container, false);
         View root = binding.getRoot();
 
+
         if (getArguments() != null) {
 
-            AudioModel new_audioModel = new AudioModel(
-                    getArguments().getInt(KEY_PATH),
-                    getArguments().getString(KEY_TITLE),
-                    getArguments().getInt(KEY_IMAGE));
+            AudioModel new_audioModel =(AudioModel)getArguments().getSerializable(KEY_M);
 
             n_audioModel = new_audioModel;
 
             binding.imagePlayPage.setImageResource(new_audioModel.getImage());
             binding.nameOfTrack.setText(new_audioModel.getTitle());
+
+
         } else {
+
             Toast.makeText(requireActivity(), " there are nothing", Toast.LENGTH_SHORT).show();
+
         }
         binding.playBar.setMax(100);
+        prepareMediaPlayer();
+
+
+        binding.playBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                if (mediaPlayer != null && !fromUser) {
+                    long newPosition = (mediaPlayer.getDuration() * progress) / 100;
+                    mediaPlayer.seekTo((int) newPosition);
+                    binding.tvCurrentTime.setText(milliSecondsToTimer(newPosition));
+
+                }
+            }
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+                updateSeekBar();
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+                // Do nothing
+            }
+        });
+
+        return root;
+
+    }
+
+    @Override
+    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
+
 
         binding.imagePlay.setOnClickListener(v -> {
-
-            if (mediaPlayer != null && !mediaPlayer.isPlaying()) {
-
-                mediaPlayer.seekTo(mediaPlayer.getCurrentPosition());
+            if (mediaPlayer != null && mediaPlayer.isPlaying()) {
+                updateSeekBar();
                 mediaPlayer.start();
                 binding.imagePlay.setVisibility(View.INVISIBLE);
                 binding.imagePause.setVisibility(View.VISIBLE);
             } else {
-                prepareMediaPlayer();
                 mediaPlayer.start();
+                updateSeekBar();
                 binding.imagePlay.setVisibility(View.INVISIBLE);
                 binding.imagePause.setVisibility(View.VISIBLE);
             }
         });
+
         binding.imagePause.setOnClickListener(v1 -> {
             mediaPlayer.pause();
             binding.imagePause.setVisibility(View.INVISIBLE);
             binding.imagePlay.setVisibility(View.VISIBLE);
         });
 
-        binding.playBar.setOnTouchListener(new View.OnTouchListener() {
-            @SuppressLint("ClickableViewAccessibility")
-            @Override
-            public boolean onTouch(View view, MotionEvent event) {
-                SeekBar seekBar = (SeekBar) view;
-                int playPosition = (mediaPlayer.getDuration() / 100) * seekBar.getProgress();
-                mediaPlayer.seekTo(playPosition);
-                binding.tvCurrentTime.setText(milliSecondsToTimer(mediaPlayer.getCurrentPosition()));
-                return false;
-            }
-        });
-//        mediaPlayer.setOnBufferingUpdateListener(new MediaPlayer.OnBufferingUpdateListener() {
-//            @Override
-//            public void onBufferingUpdate(MediaPlayer mediaPlayer, int percent) {
-//                playerBar.setSecondaryProgress(percent);
-//
-//            }
-//        });
 
         binding.btnNextMusic.setOnClickListener(v2 -> {
 
@@ -128,39 +135,43 @@ public class SlideshowFragment extends Fragment {
             Toast.makeText(requireActivity(), "PREVIOUS", Toast.LENGTH_SHORT).show();
         });
 
-        return root;
     }
-
-
     private void prepareMediaPlayer() {
 
-                mediaPlayer = MediaPlayer.create(requireActivity(), n_audioModel.getPath());
+        mediaPlayer = MediaPlayer.create(requireActivity(), n_audioModel.getPath());
+        binding.tvTotalDuration.setText(milliSecondsToTimer(mediaPlayer.getDuration()));
+        updateSeekBar();
+    }
+    @Override
+    public void onBufferingUpdate(MediaPlayer mp, int percent) {
+        binding.playBar.setSecondaryProgress(percent);
+        updateSeekBar();
+    }
 
-
-            binding.tvTotalDuration.setText(milliSecondsToTimer(mediaPlayer.getDuration()));
-
-
+    @Override
+    public void onSeekComplete(MediaPlayer mp) {
+        updateSeekBar();
     }
 
     private Runnable updater = new Runnable() {
         @Override
         public void run() {
-                    updateSeekBar();
+            updateSeekBar();
             long currentDuration = mediaPlayer.getCurrentPosition();
             binding.tvCurrentTime.setText(milliSecondsToTimer(currentDuration));
+
 
         }
     };
     private void updateSeekBar() {
+        if (mediaPlayer.isPlaying()) {
+            int progress = (int) (((float) mediaPlayer.getCurrentPosition() / mediaPlayer.getDuration()) * 100);
+            binding.playBar.setProgress(progress);
+            handler.postDelayed(updater, 20000);
 
-        if(mediaPlayer.isPlaying()){
-            playerBar.setProgress((int)(((float) mediaPlayer
-                    .getCurrentPosition()/ mediaPlayer.getDuration())*100));
-            handler.postDelayed(updater,1000);
         }
 
     }
-
     private String milliSecondsToTimer(long milliSeconds) {
         String timerString = "";
         String secondString;
@@ -187,4 +198,6 @@ public class SlideshowFragment extends Fragment {
         mediaPlayer.release();
         binding = null;
     }
+
+
 }

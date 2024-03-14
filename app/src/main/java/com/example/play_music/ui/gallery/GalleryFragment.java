@@ -1,5 +1,6 @@
 package com.example.play_music.ui.gallery;
 
+import android.net.Uri;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -28,11 +29,17 @@ public class GalleryFragment extends Fragment {
             R.drawable.artist_weekend, R.drawable.ic_launcher_background,
             R.drawable.artist_weekend, R.drawable.ic_launcher_background,
             R.drawable.artist_weekend, R.drawable.ic_launcher_background};
-    int[] path_list = { R.raw.adam_jurek, R.raw.enastra,
-                        R.raw.jan_khalib,  R.raw.victor_tzoi_peremen,
-                        R.raw.enastra, R.raw.jan_khalib,
-                        R.raw.adam_jurek,R.raw.enastra,
-                        R.raw.jan_khalib,R.raw.adam_jurek };
+    int[] path_list = {R.raw.adam_jurek,
+            R.raw.enastra,
+            R.raw.fone_music,
+            R.raw.fone_music,
+            R.raw.fone_music,
+            R.raw.fone_music,
+            R.raw.fone_music,
+            R.raw.fone_music,
+            R.raw.fone_music,
+            R.raw.fone_music };
+
 
 
     public View onCreateView(@NonNull LayoutInflater inflater,
@@ -40,12 +47,10 @@ public class GalleryFragment extends Fragment {
 
         binding = FragmentGalleryBinding.inflate(inflater, container, false);
         View root = binding.getRoot();
-
         musicAdapter = new MusicAdapter();
         createList();
         musicAdapter.setList(list);
         binding.rvMusic.setAdapter(musicAdapter);
-
         return root;
     }
 

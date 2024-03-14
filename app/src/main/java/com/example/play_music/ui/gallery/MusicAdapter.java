@@ -23,9 +23,8 @@ public class MusicAdapter extends RecyclerView.Adapter<MusicAdapter.ViewHolder> 
     ItemMusicBinding binding;
     List<AudioModel> list = new ArrayList<>();
     NavController navController;
-    private final String KEY_PATH = "KEY_PATH";
-    private final String KEY_TITLE = "KEY_TITLE";
-    private final String KEY_IMAGE = "KEY_IMAGE";
+    private final String KEY_M = "KEY_M";
+
 
     public void setList(List<AudioModel> list) {
         this.list = list;
@@ -36,7 +35,6 @@ public class MusicAdapter extends RecyclerView.Adapter<MusicAdapter.ViewHolder> 
     public MusicAdapter.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         binding = ItemMusicBinding
                 .inflate(LayoutInflater.from(parent.getContext()), parent, false);
-
         return new ViewHolder(binding.getRoot());
 
     }
@@ -56,6 +54,7 @@ public class MusicAdapter extends RecyclerView.Adapter<MusicAdapter.ViewHolder> 
     public class ViewHolder extends RecyclerView.ViewHolder {
 
         public ViewHolder(@NonNull View itemView) {
+
             super(itemView);
         }
 
@@ -64,23 +63,25 @@ public class MusicAdapter extends RecyclerView.Adapter<MusicAdapter.ViewHolder> 
             binding.btnToHear.setOnClickListener(v -> {
 
                 Bundle bundle = new Bundle();
-                bundle.putString(KEY_TITLE, model.getTitle());
-                bundle.putInt(KEY_IMAGE,model.getImage());
-                bundle.putInt(KEY_PATH, model.getPath());
+
+                bundle.putSerializable(KEY_M, new AudioModel( model.getPath(),model.getTitle(), model.getImage()));
 
                 navController = Navigation.findNavController((Activity)itemView.getContext(),
                         R.id.nav_host_fragment_content_main);
 
-                navController.navigate(R.id.action_nav_gallery_to_nav_slideshow, bundle);
+                try {
+                    navController.navigate(R.id.action_nav_gallery_to_nav_slideshow, bundle);
+                }catch (NullPointerException ex){
 
+                    if (bundle==null){
+
+                        navController.navigate(R.id.action_nav_gallery_to_nav_slideshow);
+                    }
+                }
             });
-
-
             binding.titleTrackCard.setText(model.getTitle());
             binding.imageTrackCard.setImageResource(model.getImage());
-            binding.pathTrackCard.setText(model.getPath());
 
         }
-
     }
 }

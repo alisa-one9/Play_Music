@@ -1,5 +1,6 @@
 package com.example.play_music;
 
+import android.net.Uri;
 import android.os.Parcel;
 import android.os.Parcelable;
 
@@ -13,12 +14,11 @@ public class AudioModel implements  Serializable {
     String title;
     int image;
 
-    public AudioModel(int path, @Nullable String title, int image) {
+    public AudioModel(int path, String title, int image) {
         this.path = path;
         this.title = title;
         this.image = image;
     }
-
 
     public int getPath() {
         return path;

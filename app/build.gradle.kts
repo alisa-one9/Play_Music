@@ -49,4 +49,6 @@ dependencies {
 
     // круглое изображение
     implementation ("de.hdodenhof:circleimageview:3.1.0")
+    //для анимации
+    implementation ("com.airbnb.android:lottie:3.4.1")
 }
